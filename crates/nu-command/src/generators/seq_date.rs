@@ -315,7 +315,18 @@ pub fn run_seq_dates(
 
     let mut ret = vec![];
     loop {
-        let date_string = &next.format(&out_format).to_string();
+        let date_string = match std::panic::catch_unwind(|| next.format(&out_format).to_string()) {
+            Ok(x) => x,
+            Err(_) => {
+                return Err(ShellError::GenericError {
+                    error: "Invalid output format".into(),
+                    msg: "Catch a panic while formatting dates".into(),
+                    span: Some(call_span),
+                    help: None,
+                    inner: vec![],
+                })
+            }
+        };
         ret.push(Value::string(date_string, call_span));
         next += Duration::days(step_size);
 
